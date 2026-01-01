@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 public class Topic implements  Agent {
     public final String name;
-    private final ArrayList<Agent> subs;
-    private final ArrayList<Agent> pubs;
+    final ArrayList<Agent> subs;
+    final ArrayList<Agent> pubs;
 
     Topic(String name){
         this.name=name;

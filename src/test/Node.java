@@ -10,6 +10,7 @@ public class Node {
 
     public Node(String name) {
         this.name = name;
+        this.edges = new ArrayList<>();
     }
 
     public String getName() {
@@ -40,27 +41,23 @@ public class Node {
         this.edges.add(node);
     }
 
-    public boolean helpHasCycles(Node node, Set<Node> visited,Set<Node> inPath) {
-        if(visited.contains(node))
+    private boolean hasCyclesFrom(Node current, Set<Node> visited) {
+        if (visited.contains(current))
             return false;
-        if(inPath.contains(node))
-            return true;
 
-        visited.add(node);
-        inPath.add(node);
+        visited.add(current);
 
-        for(Node n : node.edges){
-            if(!n.helpHasCycles(n,visited,inPath))
-                return false;
+        for (Node next : current.edges) {
+            if (next == this)
+                return true;
+
+            if (hasCyclesFrom(next, visited))
+                return true;
         }
-        inPath.remove(node);
-        return true;
+        return false;
     }
 
     public boolean hasCycles() {
-        if (edges == null || edges.isEmpty())
-            return false;
-        return helpHasCycles(edges.getFirst(), new HashSet<>(),
-                new HashSet<>());
+        return hasCyclesFrom(this, new HashSet<>());
     }
 }
