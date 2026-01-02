@@ -27,14 +27,16 @@ public class IncAgent implements Agent {
 
     @Override
     public void callback(String topic, Message msg) {
-        double res = (Double) msg.asDouble;
-        if (Double.isNaN(res))
+        double val = msg.asDouble;
+        if (Double.isNaN(val))
             return;
-        value += 1;
+
+        double result = val+1;
+
         TopicManagerSingleton
                 .get()
-                .getTopic(m_subs[0])
-                .publish(new Message(res));
+                .getTopic(m_pubs[0])
+                .publish(new Message(result));
     }
 
     @Override

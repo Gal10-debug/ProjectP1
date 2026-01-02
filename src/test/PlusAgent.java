@@ -21,7 +21,7 @@ public class PlusAgent implements Agent{
 
     @Override
     public String getName(){
-        return "";
+        return "PlusAgent";
     }
 
     @Override
@@ -32,7 +32,10 @@ public class PlusAgent implements Agent{
 
     @Override
     public void callback(String topic, Message msg){
-        double value = (Double) msg.asDouble;
+        double value = msg.asDouble;
+        if(Double.isNaN(value))
+            return;
+
         if(topic.equals(m_subs[0])){
             this.x = value;
         }
@@ -40,11 +43,11 @@ public class PlusAgent implements Agent{
             this.y = value;
         }
 
-        if(this.x!=0.0 && this.y!=0.0){
-            double result = this.x+this.y;
-            Topic topicToPub =  TopicManagerSingleton.get().getTopic(m_pubs[0]);
-            topicToPub.publish(new Message(result));
-        }
+        double result = x+y;
+        TopicManagerSingleton
+                .get()
+                .getTopic(m_pubs[0])
+                .publish(new Message(result));
     }
 
     @Override
