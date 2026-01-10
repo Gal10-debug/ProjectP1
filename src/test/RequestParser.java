@@ -8,12 +8,14 @@ import java.util.*;
 public class RequestParser {
 
     public static RequestInfo parseRequest(BufferedReader reader) throws IOException {
-        String httpCommand = null;
-        String uri = null;
-        String[] uriSegment = null;
-        Map<String,String> parameters = new HashMap<>();
-        byte[] content = null;
 
+        String httpCommand;
+        String uri;
+        String[] uriSegment;
+        Map<String, String> parameters = new HashMap<>();
+        byte[] content = new byte[0];
+
+        /* ==================== request line ==================== */
         String firstLine = reader.readLine();
         if (firstLine == null || firstLine.isEmpty()) {
             return null;
@@ -23,32 +25,31 @@ public class RequestParser {
         httpCommand = parts[0];
         uri = parts[1];
 
-        //Handle the header of the request
+        /* ==================== headers ==================== */
         String line;
-        int contentLength = -1;
+        int contentLength = 0;
 
         while ((line = reader.readLine()) != null) {
             if (line.isEmpty()) {
                 break;
             }
 
-            int colonIndex = line.indexOf(":");
+            int colonIndex = line.indexOf(':');
             if (colonIndex > 0) {
                 String key = line.substring(0, colonIndex).trim();
                 String value = line.substring(colonIndex + 1).trim();
-                //Header parameters such as HOST and content length are not included in parameters map
 
                 if (key.equalsIgnoreCase("Content-Length")) {
                     try {
                         contentLength = Integer.parseInt(value);
-                    } catch (NumberFormatException e) {
-                        contentLength = -1;
+                    } catch (NumberFormatException ignored) {
+                        contentLength = 0;
                     }
                 }
             }
         }
 
-        //Handle uri segments and other values
+        /* ==================== URI parsing ==================== */
         String path = uri;
         String query = null;
 
@@ -58,59 +59,52 @@ public class RequestParser {
             query = uri.substring(qIndex + 1);
         }
 
-        String[] rawSegments = path.split("/");
         List<String> segmentsList = new ArrayList<>();
-
-        for (String seg : rawSegments) {
+        for (String seg : path.split("/")) {
             if (!seg.isEmpty()) {
                 segmentsList.add(seg);
             }
         }
-
         uriSegment = segmentsList.toArray(new String[0]);
 
-        //Parameters's key and value extracting into the hashmap from uri
         if (query != null && !query.isEmpty()) {
-            String[] pairs = query.split("&");
-            for (String pair : pairs) {
-                int eqIndex = pair.indexOf('=');
-                if (eqIndex > 0 && eqIndex < pair.length() - 1) {
-                    String key = pair.substring(0, eqIndex);
-                    String value = pair.substring(eqIndex + 1);
-                    parameters.put(key, value);
+            for (String pair : query.split("&")) {
+                int eq = pair.indexOf('=');
+                if (eq > 0) {
+                    parameters.put(
+                            pair.substring(0, eq),
+                            pair.substring(eq + 1)
+                    );
                 }
             }
         }
 
-        //Body content reading and more params such as filename
-        String otherLine;
-        while ((otherLine = reader.readLine()) != null) {
-            if (otherLine.isEmpty()) {
-                break;
-            }
-
-            int eqIndex = otherLine.indexOf('=');
-            if (eqIndex > 0) {
-                String key = otherLine.substring(0, eqIndex);
-                String value = otherLine.substring(eqIndex + 1);
-                parameters.put(key, value);
+        /*==================== Read extra params ====================*/
+        if (reader.ready()) {
+            String otherLine = reader.readLine();
+            if (otherLine != null && !otherLine.isEmpty()) {
+                int eqIndex = otherLine.indexOf('=');
+                if (eqIndex > 0) {
+                    parameters.put(
+                            otherLine.substring(0, eqIndex),
+                            otherLine.substring(eqIndex + 1)
+                    );
+                }
             }
         }
 
-
+        /* ==================== body ==================== */
         ByteArrayOutputStream contentBuffer = new ByteArrayOutputStream();
 
-        String contentLine;
-        while ((contentLine = reader.readLine()) != null) {
-            if (contentLine.isEmpty()) {
-                break;
+        if (reader.ready()) {
+            String contentLine = reader.readLine();
+            if (contentLine != null && !contentLine.isEmpty()) {
+                contentBuffer.write(contentLine.getBytes());
+                contentBuffer.write('\n');
             }
-            contentBuffer.write(contentLine.getBytes());
-            contentBuffer.write('\n');
         }
 
         content = contentBuffer.toByteArray();
-
 
         return new RequestInfo(
                 httpCommand,
@@ -120,8 +114,9 @@ public class RequestParser {
                 content
         );
     }
-	
-	// RequestInfo given internal class
+
+
+    // RequestInfo given internal class
     public static class RequestInfo {
         private final String httpCommand;
         private final String uri;
