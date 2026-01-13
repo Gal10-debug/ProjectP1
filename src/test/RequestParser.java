@@ -96,7 +96,7 @@ public class RequestParser {
         /* ==================== body ==================== */
         ByteArrayOutputStream contentBuffer = new ByteArrayOutputStream();
 
-        if (reader.ready()) {
+        while (reader.ready()) {
             String contentLine = reader.readLine();
             if (contentLine != null && !contentLine.isEmpty()) {
                 contentBuffer.write(contentLine.getBytes());
